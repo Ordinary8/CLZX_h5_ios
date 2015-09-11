@@ -1,0 +1,124 @@
+<!DOCTYPE HTML>
+<HTML>
+<head>
+	<meta charset="utf-8"> 
+	<title>用户列表</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<script type="text/javascript" src="js/jquery-2.1.1.min.js"></script>
+	<script type="text/javascript" src="js/public.js"></script>
+	<link rel="stylesheet" type="text/css" href="css/userlist.css">
+	<link rel="stylesheet" type="text/css" href="css/jquery.mobile-1.4.3.min.css">
+	<script src="js/jquery-latest.min.js"></script>
+	<script src="js/jquery.mobile-1.4.3.min.js"></script>
+	<script src="js/iscroll.js"></script>
+	<script type="text/javascript" src="js/userList.js"></script>
+<style type="text/css">
+	 .ui-input-text,.ui-body-inherit,.ui-shadow-inset{
+	background:url("img/search.png") no-repeat;-webkit-background-origin:content-box;width: 93%;border:1px solid #ccc;text-indent: 30px;padding: .4em;
+	margin:0;border-radius: 5px;outline-style: none;  width: 100%;box-sizing: border-box;
+} 
+.ui-input-text>input{padding: 0;height: auto;min-height: 0;}
+.ui-input-text.ui-focus{box-shadow: 0 0 0}
+#pullDown, #pullUp {
+	text-align: center;
+	background:#fff;
+	height:40px;
+	line-height:40px;
+	padding:5px 10px;
+	border-bottom:1px solid #ccc;
+	font-weight:bold;
+	font-size:14px;
+	color:#888;
+}
+#pullDown .pullDownIcon, #pullUp .pullUpIcon  {
+		text-align: center;
+	display:block; float:left;
+	width:40px; height:40px;
+	background:url(img/pull-icon@2x.png) 0 0 no-repeat;
+	-webkit-background-size:40px 80px; background-size:40px 80px;
+	-webkit-transition-property:-webkit-transform;
+	-webkit-transition-duration:250ms;	
+}
+#pullDown .pullDownIcon {
+	-webkit-transform:rotate(0deg) translateZ(0);
+}
+#pullUp .pullUpIcon  {
+	-webkit-transform:rotate(-180deg) translateZ(0);
+}
+#pullDown.flip .pullDownIcon {
+	-webkit-transform:rotate(-180deg) translateZ(0);
+}
+#pullUp.flip .pullUpIcon {
+	-webkit-transform:rotate(0deg) translateZ(0);
+}
+#pullDown.loading .pullDownIcon, #pullUp.loading .pullUpIcon {
+	background-position:0 100%;
+	-webkit-transform:rotate(0deg) translateZ(0);
+	-webkit-transition-duration:0ms;
+	-webkit-animation-name:loading;
+	-webkit-animation-duration:2s;
+	-webkit-animation-iteration-count:infinite;
+	-webkit-animation-timing-function:linear;
+}
+@-webkit-keyframes loading {
+	from { -webkit-transform:rotate(0deg) translateZ(0); }
+	to { -webkit-transform:rotate(360deg) translateZ(0); }
+}
+#pullUp,#pullDown{display: none}
+
+#but{right: 1.5%;top: 70%;background-color: #5CC23B;width: 3.5em;height: 3.5em;border-radius: 50%;box-shadow: 0 0 15px rgba(0,0,0,.6);position: fixed;z-index: 1031;background-image: url("img/ico_poi_repair.png");background-size:100% 100%;background-repeat:no-repeat;overflow: hidden;-webkit-transition: -webkit-transform .5s;-webkit-transform:rotate3d(0,0,1,0);}
+.show_map #map{-webkit-transform:translate3d(0,0,0);}
+.show_map #but{-webkit-transform:rotate3d(0,0,1,540deg);}
+.show_map #but>div{opacity: 1}
+#but>div{background-color: #fff;background-image: url("img/ico_shop_0.png");position: absolute;width: 100%;height: 100%;background-size:100% 100%;background-repeat:no-repeat;-webkit-transition: opacity .5s;-webkit-transform:rotate3d(0,0,1,180deg);opacity: 0;border-radius: 50%;}
+.ui-input-text,.ui-body-inherit,.ui-shadow-inset{background: url(img/search.png) no-repeat 2px;}
+.ui-mobile .ui-page-active{overflow: hidden;height: 100%;background-color: #fff;}
+#more{-webkit-transform:translate3d(100%,0,0);padding-top: 20px;z-index: 1028;}
+.show_more #more{-webkit-transform:translate3d(0,0,0);}
+#map{z-index: 1030;}
+</style>
+</head>
+<body>
+<div class="status_bar"></div>
+<div id="top" data-position="fixed">
+	<div id="userList">
+		<select id="select">
+		</select>
+	</div>
+	<div class="search">
+		<input id="search_txt" name="search_txt" type="text" placeholder="请输入查询的内容">
+		<div class="search-content" id="search_content">
+			<ul>
+			</ul>
+		</div>
+	</div>
+</div>
+<div id="wrapper" class="wrapper" style="bottom:0">
+   <div id="scroller" class="ui-content" role="main" style="padding:0px;">
+        <div id="pullDown"  class="listDiv">
+            <span class="pullDownIcon"></span><span class="pullDownLabel">下拉刷新</span>
+        </div>
+        <div id="uList"></div>
+		<div id="userid" style="display:none">
+			<ul></ul>
+		</div>
+	    <div id="pullUp">
+	    	<span class="pullUpIcon"></span>
+	    	<span class="pullUpLabel">上拉加载</span>
+	    </div>
+	</div>
+
+</div>
+<iframe id="bottom" runat="server" src="bottom.html" width="100%" frameborder="0" scrolling="no" style="bottom:0;position:fixed;height: 50px;z-index:1029"></iframe>
+
+<div class="child_view" id="more">
+    <iframe  src="more.html"></iframe>
+</div>
+<div class="child_view" id="map">
+    <iframe  src="map.html"></iframe>
+</div>
+<div id="but">
+	<div></div>
+</div>
+</body>
+</HTML>

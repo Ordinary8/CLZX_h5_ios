@@ -1,0 +1,46 @@
+*{box-sizing: border-box;}
+#login{width:90%;margin: 0 auto;}
+.login_logo{width: 60%;margin: 20% auto}
+.login_logo>img{width: 100%;}
+
+.login_txt{
+	width: 100%;
+	background-color: #fff;
+	border-radius: .3em;
+	padding: .3em;
+    box-shadow: 0 2px 3px rgba(0,0,0,.6);
+}
+
+.login_txt input{
+	border: none;
+	width: 100%;
+	padding: .6em 1em;
+	font-size: 1em;
+}
+.login_txt input:focus{
+	outline-offset: 0;
+    outline: 0;
+}
+.rememberPassword{font-size: .8em;color: #fff;margin-top: 20px;}
+.rememberPassword>input{vertical-align: bottom;width: 1.3em;height: 1.3em;}
+.login_btn{  
+	margin-top: 1.5em;
+	width: 100%;
+	line-height: 2.5em;
+	background-color: #fff;
+	border-radius: .3em;
+	text-align: center;
+	font-weight: 700;
+	box-shadow: 0 1px 2px rgba(0,0,0,.6);
+}
+
+
+.loading_back{position: absolute;width: 100%;height: 100%;background-color: rgba(255,255,255,.5);top: 0;display: none}
+.loading{position: fixed;width: 2.5em;height: 2.5em;background-color: #1BADED;top: 30%;margin: auto;left: 0;right: 0;border-radius: .2em;
+	box-shadow:0 0 10px rgba(0,0,0,.5);-webkit-animation: rotate 1s;-webkit-animation-iteration-count:infinite;}
+.loading_back>span{position: absolute;top: 40%;width: 100%;text-align: center;}
+@-webkit-keyframes rotate
+{
+from{-webkit-transform: rotate(0)}
+to{-webkit-transform: rotate(360deg)}
+}

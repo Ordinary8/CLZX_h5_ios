@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<meta charset="utf-8"> 
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<script type="text/javascript" src="js/jquery-2.1.1.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="css/jquery.mobile-1.4.3.min.css">
+	<script src="js/jquery.mobile-1.4.3.min.js"></script>
+	<style type="text/css">
+	*{margin: 0;padding: 0;}
+	#bottom{width: 100%;background: #ccc;position: fixed;bottom: 0;border-top:1px solid #bbb;}
+	#bottom>ul{width: 100%;}
+	#bottom>ul>li{
+	    list-style-type: none;
+	    width: 33.333333%;
+	    text-align: center;
+	    font-size: 13px;
+	    float: left;
+	}
+	#bottom>ul>li>a{
+	  border: 0;
+	  outline: none;
+	  text-decoration: none;
+	  color: #555;
+	  line-height: 25px;
+	}
+	.ui-btn{margin: 0;border:0;}
+	.ui-btn.ui-corner-all{border-radius: 0;}
+	</style>
+</head>
+<body>
+<div id="bottom">
+	<ul>
+		<li><a href="" onclick="parent.changeMore()" data-role="button" data-icon="home">首页</a></li>
+		<li><a href="" onclick="parent.changeMap()" data-role="button" data-icon="gear">地图</a></li>
+		<li><a href="" onclick="parent.changeMore()" data-role="button" data-icon="grid">更多</a></li>
+	</ul>
+</div>
+
+</body>
+</html>

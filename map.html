@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="initial-scale=1.0,user-scalable=no">
+    <meta charset="UTF-8">
+
+    <title>车联在线-定位</title>
+    <link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
+    <link href="css/mobiscroll.core-2.5.2.css" rel="stylesheet" type="text/css" />
+    <link href="css/mobiscroll.animation-2.5.2.css" rel="stylesheet" type="text/css" />
+    <!-- E 可根据自己喜好引入样式风格文件 -->
+    <link href="css/mobiscroll.android-ics-2.5.2.css" rel="stylesheet" type="text/css" />
+    <link href="css/global.css" rel="stylesheet">
+</head>
+<body>
+<div id="loader-map"><span class="ui-icon-loading" ></span></div>
+<div id="container"></div>
+<!-- 模态框（Modal） -->
+<div id="modal-overlay">
+    <div class="modal-data">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="myModalLabel">
+                    确认时间段
+                </h3>
+            </div>
+            <div class="modal-body">
+                <form action="playback.html" class="form-horizontal"  role="form" id="form1">
+                    <div class="form-group row">
+                        <label for="start_time" class="col-md-4 col-sd-4">开始时间</label>
+                        <div class="input-group date form_datetime col-md-8 col-sm-8"  data-date-format="yyyy-mm-dd hh:ii" data-link-field="dtp_input1">
+                            <input class="form-control" id="start_time" name="start_time" size="16" type="text" value="" readonly >
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="end_time" class="col-md-4 col-sd-4">结束时间</label>
+                        <div class="input-group date form_datetime col-md-8 col-sm-8" data-date-format="yyyy-mm-dd hh:ii" data-link-field="dtp_input2">
+                            <input class="form-control" id="end_time" name="end_time" size="12" type="text" value="" readonly >
+                        </div>
+                    </div>
+                    <div class="form-group text-center">
+                        <button type="submit" class="btn btn-primary">
+                            查询
+                        </button>
+                        <button type="button" class="btn btn-default"
+                                onclick="closeModal()">关闭
+                        </button>
+
+                    </div>
+                </form>
+            </div>
+
+        </div><!-- /.modal-content -->
+
+    </div><!-- /.modal -->
+</div>
+<script src="jquery/jquery-1.8.3.min.js"> </script>
+<script type="text/javascript" src="./jquery/jquery.validate.min.js" charset="UTF-8"></script>
+<script src="bootstrap/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="./bootstrap/js/bootstrap-datetimepicker.js" charset="UTF-8"></script>
+<script type="text/javascript" src="./bootstrap/js/bootstrap-datetimepicker.zh-CN.js" charset="UTF-8"></script>
+
+<script src="js/mobiscroll.core-2.5.2.js" type="text/javascript"></script>
+<script src="js/mobiscroll.core-2.5.2-zh.js" type="text/javascript"></script>
+
+<script src="js/mobiscroll.datetime-2.5.1.js" type="text/javascript"></script>
+<script src="js/mobiscroll.datetime-2.5.1-zh.js" type="text/javascript"></script>
+<!-- S 可根据自己喜好引入样式风格文件 -->
+<script src="js/mobiscroll.android-ics-2.5.2.js" type="text/javascript"></script>
+
+<script type="text/javascript" src="js/globalVar.js"></script>
+<script type="text/javascript" src="js/dateTimePicker.js"></script>
+<script type="text/javascript" src="js/modal.js"></script>
+<script type="text/javascript" src="js/getTodayTime.js"></script>
+<script type="text/javascript" src="js/track.js"></script>
+<script type="text/javascript" src="js/validateDateTime.js"></script>
+<script type="text/javascript" src="js/addMarker.js"></script>
+<script type="text/javascript" src="js/getAlert.js"></script>
+<script>
+
+//加载地图
+
+    //获取地图数据的jax请求http://web.wisegps.cn:3000/customer/177/vehicle?auth_code=f6cdab399b363a36aac40724857c31ea&tree_path=,1,177,&mode=all&page_no=1&page_count=20
+    //http://web.wisegps.cn:3000/customer/174/vehicle?auth_code=f3b904271c555534f74746a998eecb0e&tree_path=,1,177,174,&mode=all&page_no=1&page_count=20
+
+var mode="all";
+var page_no="1";
+var page_count="20";
+var obj_id="";
+var url = urlHead+"customer/"+customer_id+"/vehicle?auth_code="+auth_code+"&tree_path="+tree_path+"&mode="+mode+"&page_no="+page_no+"&page_count="+page_count;
+var carData=[],carNum,map,carMk,infoWindow;
+var posData;//每次刷新的位置信息
+var tiemOut=10000;
+var askId;
+var trackPList,trackCar;//跟踪线的点数组,当前跟踪的车
+var track_id,playback_id;
+
+function drawCar(data,refresh){
+    if(!data||data.length===0){return;}
+    //删除carData数组中active_gsp_data为null的元素；
+    if(!map){
+        setTimeout(function(){
+            if(!askId)
+                drawCar(data,refresh)
+        },1000);
+        return;
+    }
+    if(refresh=="down"){
+        carData = data;
+    }else if(refresh=="up")
+        carData = carData.concat(data);
+    localStorage.setItem("carData",JSON.stringify(carData));
+    carNum = carData.length;
+
+    for (var i = 0; i < carNum; i++) {
+        if (carData[i].active_gps_data == null) {
+            //console.log("null"+i);//active_gps_data为空
+            carData = carData.slice(0, i).concat(carData.slice(i + 1));//删除carNum数组中active_gps_data为空的元素
+            carNum = carNum - 1;//carNum减一
+            i = i - 1;
+        }
+    }
+    carNum = carData.length;
+    if(!askId||refresh){
+        carMk = new Array(carNum);
+        infoWindow = new Array(carNum);
+    }
+
+    var point = new Array(carNum);
+    var content = new Array(carNum);
+
+    //为button添加id
+
+    track_id = new Array(carNum);
+    playback_id = new Array(carNum);
+    for (var i = 0; i < carNum; i++) {
+        track_id[i] = "t" + i;
+        playback_id[i] = "p" + i;
+    }
+    var window_opts = {width:0,
+            height: 0
+        };
+    for (var i = 0; i < carNum; i++) {
+        point[i] = new BMap.Point(carData[i].active_gps_data.b_lon, carData[i].active_gps_data.b_lat);
+
+            //声明车辆数据:车牌号（header）、时间、状态、里程、油量；跟踪和轨迹回放（button）
+        var number = carData[i].obj_name;//车牌号（header）
+
+        var uni_alerts=carData[i].active_gps_data.uni_alerts;
+        var uni_status=carData[i].active_gps_data.uni_status;
+        var alert= getAlert(uni_alerts);
+        var status = getStatus(uni_status);//uni_status值对应的状态；
+        var speed = carData[i].active_gps_data.speed;//车速，只有当state为行驶时，才显示
+        speed=Math.round(speed);
+        var mileage = carData[i].active_gps_data.mileage;//里程
+        var oil = carData[i].active_gps_data.fuel;//油量
+        var  state = "";//state的4中状态分别为alert\off\on\out对应的是4个不同的icon类型
+        var statehtml = "";//infoWindow中显示的状态
+        var stateHead = "";
+        var gps_flag = carData[i].active_gps_data.gps_flag;
+        var rota = carData[i].active_gps_data.direct;//车辆图标方向
+        //计算离线时间
+        var rcv_time = carData[i].active_gps_data.rcv_time;
+        var off_minutes = getOffMinutes(rcv_time);//离线分钟数
+        var datetime=dateFormal(rcv_time);//转换为本地时间格式
+
+        //获取statehtml，包括state,alert,speed
+        statehtml = getStateHtml(gps_flag, speed, status, alert).substring(2);
+
+        //获取车辆图标类型state
+        if (uni_alerts.length >= 1 && uni_alerts[0] !== null) {
+            state = "alert";
+            stateHead = "警报 ";
+        } else {
+            if (off_minutes > 10) {
+                state = "out";
+                stateHead = "离线 ";
+            } else {
+                if (speed > 0) {
+                    state = "on";
+                    stateHead = "行驶 ";
+                } else {
+                    state = "off";
+                    stateHead = "静止 ";
+                }
+            }
+        }
+        var c="跟踪";
+        if(trackCar&&i==trackCar.car_index){
+            c="取消跟踪";
+        }
+        //添加信息窗口的内容
+        content[i] = "<div class='infoWindow' ><p><b>" + number + "</b></p>" + "<p>" + datetime + "</p>" + "<p>" + stateHead + statehtml + "</p>" + "<p>里程：" + mileage + "km</p>"  + "<p><button id=" + track_id[i] + " onclick='track(this.id)'>"+c+"</button>&nbsp;<button id=" + playback_id[i] + " onclick='modal(this.id)'>轨迹回放</button></p></div>";
+
+        var str = "";
+        str = str + content[i];
+        
+        //窗口的参数
+        //为车辆覆盖物添加信息窗口
+        //infoWindow[i] = new BMap.InfoWindow(content[i], window_opts);
+        //alert(content[i]);
+
+        if(!askId||refresh){
+            //为车辆覆盖物添加信息窗口
+            infoWindow[i] = new BMap.InfoWindow(content[i], window_opts);
+            //调用addMarker方法添加marker
+            carMk[i] = addMarker(point[i], rota, state);
+            //carMk[i].setRotation(rota);
+            map.addOverlay(carMk[i]);
+        }else {
+            infoWindow[i].setContent(content[i]);
+            var carIcon=carMk[i].getIcon();
+            carIcon.setSize(new BMap.Size(28,28));
+            var iconUrl;
+            switch (state) {
+                case "alert":
+                    iconUrl = "image/car_alert.png";
+                    break;
+                case "on":
+                    iconUrl = "image/car_on.png";
+                    break;
+                case "off":
+                    iconUrl = "image/car_off.png";
+                    break;
+                case "out":
+                    iconUrl = "image/car_out.png";
+            }
+            carIcon.setImageUrl(iconUrl);
+            carMk[i].setIcon(carIcon);
+            carMk[i].setPosition(point[i]);
+            carMk[i].setRotation(rota);
+        }
+    }//for--
+    var j=0;
+    while(j < carNum){
+        carMk[j].j=j; //直接使用j传不过去，
+        carMk[j].addEventListener("click", function(){
+            this.openInfoWindow(infoWindow[this.j]);//将index参数作为属性值再调用；
+        });
+        j++;
+    }
+
+    if(!askId){
+        map.centerAndZoom(point[0],10);
+        map.setViewport(map.getViewport(point));
+        //map.panTo(point[0]);
+        askId=setTimeout(askAllPos,tiemOut);
+    }
+}
+
+function askAllPos(){
+    //获取所有位置变更的车辆位置
+    var lastTime=getLastTime();
+    var posUrl = urlHead + "customer/" + customer_id + "/active_gps_data?auth_code=" + auth_code + "&update_time=" + lastTime + "&mode=all&tree_path=" + tree_path;
+    $.get(posUrl,function (data){
+        posData=data;
+        window.parent.drawChange(posData);
+        //把更新的位置放回carData
+        var objId;
+        for (var i = posData.length - 1; i >= 0; i--) {
+            objId=posData[i].obj_id;
+            for (var j = carData.length - 1; j >= 0; j--) {
+                if(carData[j].obj_id==objId){
+                    carData[j].active_gps_data=posData[i].active_gps_data;
+                    break;
+                }
+            }//内循环
+        }//外循环
+        drawCar(carData,false);
+        drawLine();//画跟踪线
+        clearTimeout(askId);
+        askId=setTimeout(askAllPos,tiemOut);
+    });
+}
+
+function getLastTime(flag){
+    var temTime,tem;
+    if(posData){
+        tem=posData;//
+    }else{
+        tem=carData;//找最晚的
+    }
+    var temMax=NewDate(tem[0].active_gps_data.rcv_time).getTime(),tem0;
+    temTime=tem[0].active_gps_data.rcv_time;
+    for (var i = tem.length - 1; i >= 0; i--) {
+        tem0=NewDate(tem[i].active_gps_data.rcv_time).getTime();
+        if(tem0>temMax){
+            temMax=tem0;
+            temTime=tem[i].active_gps_data.rcv_time;
+        }
+    };
+
+    //temTime="2015-08-27T03:18:12.153Z";
+    temTime=dateFormal(temTime);
+    temTime=temTime.replace(/:/g,"%3A").replace(" ","+");
+    return temTime;
+}
+
+function fun1(carId,json){
+    //地图中心移动该车辆
+if(!map){alert("请等待地图加载！");return;}
+    var index,centerPoint;
+       for(var i=0;i<carNum;i++){
+
+           if(carData[i].obj_id==carId) {
+               index = i;
+               break;
+           }
+       }
+        if(!index){
+            centerPoint=addNewMarker(json);
+        }else{
+            centerPoint=new BMap.Point(carData[index].active_gps_data.b_lon,carData[index].active_gps_data.b_lat);
+            carMk[index].openInfoWindow(infoWindow[index]);
+        }
+    changeAddress(carMk[index].getPosition());
+
+    map.panTo(centerPoint,{noAnimation:true});
+    map.setZoom(18);
+}
+function addNewMarker(data){
+       if(!data.active_gps_data){return;}
+        var index=carData.length;
+        carData.push(data);
+        var centerPoint=new BMap.Point(data.active_gps_data.b_lon,data.active_gps_data.b_lat);
+        var newCarMk,newInfoWindow,newContent;
+
+        var number = data.obj_name;//车牌号（header）
+
+        var uni_alerts=data.active_gps_data.uni_alerts;
+        var uni_status=data.active_gps_data.uni_status;
+        var alert= getAlert(uni_alerts);
+        var status = getStatus(uni_status);//uni_status值对应的状态；
+        var speed = data.active_gps_data.speed;//车速，只有当state为行驶时，才显示
+        speed=Math.round(speed);
+        var mileage = data.active_gps_data.mileage;//里程
+        var oil = data.active_gps_data.fuel;//油量
+        var state = "";//state的4中状态分别为alert\off\on\out对应的是4个不同的icon类型
+        var statehtml = "";//infoWindow中显示的状态
+        var stateHead = "";
+        var gps_flag = data.active_gps_data.gps_flag;
+        var rota = data.active_gps_data.direct;//车辆图标方向
+        //计算离线时间
+        var rcv_time = data.active_gps_data.rcv_time;
+        var off_minutes = getOffMinutes(rcv_time);//离线分钟数
+        var datetime=dateFormal(rcv_time);//转换为本地时间格式
+
+        //获取statehtml，包括state,alert,speed
+        statehtml = getStateHtml(gps_flag, speed, status, alert).substring(2);
+
+        //获取车辆图标类型state
+        if (uni_alerts.length >= 1 && uni_alerts[0] !== null) {
+            state = "alert";
+            stateHead = "警报 ";
+        } else {
+            if (off_minutes > 10) {
+                state = "out";
+                stateHead = "离线 ";
+            } else {
+                if (speed > 0) {
+                    state = "on";
+                    stateHead = "行驶 ";
+                } else {
+                    state = "off";
+                    stateHead = "静止 ";
+                }
+            }
+        }
+        var c="跟踪";
+        //添加信息窗口的内容
+        track_id.push("t"+index);
+        playback_id.push("p"+index);
+        newContent = "<div class='infoWindow' ><p><b>" + number + "</b></p>" + "<p>" + datetime + "</p>" + "<p>" + stateHead + statehtml + "</p>" + "<p>里程：" + mileage + "km</p>"  + "<p><button id=" +track_id[index] + " onclick='track(this.id)'>"+c+"</button>&nbsp;<button id=" +playback_id[index] + " onclick='modal(this.id)'>轨迹回放</button></p></div>";
+        newCarMk=addMarker(centerPoint,rota,state);
+
+        map.addOverlay(newCarMk);
+        carMk.push(newCarMk);
+        newInfoWindow=new BMap.InfoWindow(newContent);
+
+        newCarMk.openInfoWindow(newInfoWindow);
+        infoWindow.push(newInfoWindow);
+        return centerPoint;
+
+}
+function fun2(userId){
+    //切换成这个用户的车
+    /*url = urlHead+"customer/"+customer_id+"/vehicle?auth_code="+auth_code+"&tree_path="+userId+"&mode="+mode+"&page_no="+page_no+"&page_count="+page_count;
+    drawCar(url);
+    localStorage.setItem("tree_path",userId);*/
+}
+window.onload=function(){
+    loadMapJScript();
+    if(location.search){
+        var tem=localStorage.getItem("carData");
+        try{
+            carData=JSON.parse(tem);
+            }catch(err){}
+        if(!askId){
+        drawCar(carData,false);
+        }
+    }
+}
+
+function loadMapJScript() {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src = "http://api.map.baidu.com/api?v=2.0&ak=Gav37LUVBQMzMGGXYpwtUoHT&callback=mapInit";
+    document.body.appendChild(script);
+}
+
+function mapInit(){
+    //初始化map
+    map = new BMap.Map("container");//地图实例化，以第一辆车的位置为中心
+    //控件
+    var zoomControl = new BMap.NavigationControl({type:BMAP_NAVIGATION_CONTROL_ZOOM,anchor:BMAP_ANCHOR_BOTTOM_RIGHT,offset: new BMap.Size(5, 10)});
+    map.addControl(zoomControl);//添加缩放控件
+    addressInfo();
+}
+
+
+function addMarker(point, rota, state) {  // 创建图标对象
+    //传入的参数分别为   点、旋转方向、图标颜色
+    var iconUrl;
+    switch (state) {
+        case "alert":
+            iconUrl = "image/car_alert.png";
+            break;
+        case "on":
+            iconUrl = "image/car_on.png";
+            break;
+        case "off":
+            iconUrl = "image/car_off.png";
+            break;
+        case "out":
+            iconUrl = "image/car_out.png";
+    }
+    var myIcon = new BMap.Icon(iconUrl, new BMap.Size(28, 28));
+    // 创建标注对象并添加到地图
+    var marker = new BMap.Marker(point, {icon: myIcon, rotation: rota});
+    //map.addOverlay(marker[i]);
+    return marker;
+}
+
+
+
+</script>
+<style>
+    .but{position: fixed;top: 40%;left: 0;z-index: 2; background-color: #e8e8e8;
+    }
+</style>
+</body>
+</html>

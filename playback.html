@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/global.css" rel="stylesheet">
+    <style>
+
+    </style>
+    <title>轨迹回放</title>
+</head>
+<body>
+<button type="button" class="but btn-default" onclick="self.location='map.html?msg=back';" style="width: 50px;height: 40px;"><span class="glyphicon glyphicon-backward"></span></button>
+<div id="container"></div>
+<div style="position: fixed; bottom: 20px;">
+<label style='background-color:#E0EEE0;opacity: 0.7;text-align: center'>播放速度：</label>
+
+<input id='speedCtrl' data-slider-id='ex1Slider' type='text' data-slider-min='250' data-slider-max='1750' data-slider-step='50' data-slider-value='1000'></div>
+<script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=Gav37LUVBQMzMGGXYpwtUoHT"></script>
+<script src="jquery/jquery-1.8.3.min.js"></script>
+
+<script type="text/javascript" src="js/globalVar.js"></script>
+<script type="text/javascript" src="js/getTodayTime.js"></script>
+<script type="text/javascript" src="js/getAlert.js"></script>
+
+<script src="bootstrap/js/bootstrap-slider.min.js"></script>
+<script type="text/javascript">
+
+var infoWindow,Qwidow,interval=1000;
+$(function() {
+    //从url中获取开始、结束时间
+    var param = window.location.search;
+    var time = param.split("&");
+    var start_time = time[0].substr(time[0].indexOf("=") + 1);
+    var end_time = time[1].substr(9);
+    var obj_name = sessionStorage.obj_name;//利用html 5的sessionStorage取出存好的obj_name
+    var obj_id = sessionStorage.obj_id;
+    var page_no = 1;
+    var page_count = 100;
+    var map = new BMap.Map("container");
+    var url = urlHead + "vehicle/" + obj_id + "/gps_data2?auth_code=" + auth_code + "&start_time=" + start_time + "&end_time=" + end_time + "&page_no=" + page_no + "&page_count=" + page_count;
+    //地图以及控件初始化；
+    var carMk,point,poNum,pageNum;//车辆marker,地图初始中心点
+    var timer;//定时器
+    var x=1;
+    var po,rotat;//point对象和marker的旋转属性的数组；
+    var parkStartTime="",parkEndTime="",parkTime;//车辆停车开始时间、结束时间、停车时间段    $.get(url, function (data) {
+        if(!data.data.length){return;}
+        var startLng = data.data[0].b_lon;
+        var startLat = data.data[0].b_lat;
+        point = new BMap.Point(startLng, startLat);
+        map.centerAndZoom(point, 17);//map初始化
+        var zoomControl = new BMap.NavigationControl({type:BMAP_NAVIGATION_CONTROL_ZOOM,anchor:BMAP_ANCHOR_BOTTOM_RIGHT,offset: new BMap.Size(5, 10)});
+        map.addControl(zoomControl);//添加缩放控件
+        poNum = data.total;//点的数量
+        pageNum=Math.ceil(poNum/100);
+        if (poNum >1) {
+            carMk = new BMap.Marker(point, {icon: new BMap.Icon("image/car_off.png", new BMap.Size(28, 28)),rotation:data.data[0].direct});
+            map.addOverlay(carMk);
+        }else if(poNum==1){
+            carMk = new BMap.Marker(point, {icon: new BMap.Icon("image/car_off.png", new BMap.Size(28, 28)),rotation:data.data[0].direct});
+            map.addOverlay(carMk);
+            $("playCtrl").attr("disabled", true);
+        }else{
+            x=false;
+        }
+    }, "json");
+
+    $('#speedCtrl').slider({});
+        $("#speedCtrl").change(function(){
+            var rangeValue=parseInt($("#speedCtrl").val());
+            interval=2000-rangeValue;
+        });
+
+    function PlayControl(){
+        // 默认停靠位置和偏移量
+        this.defaultAnchor = BMAP_ANCHOR_BOTTOM_RIGHT;
+        this.defaultOffset = new BMap.Size(50, 20);
+    }
+    // 通过JavaScript的prototype属性继承于BMap.Control
+    PlayControl.prototype = new BMap.Control();
+    // 自定义控件必须实现自己的initialize方法,并且将控件的DOM元素返回
+    // 在本方法中创建个input元素作为控件的容器,并将其添加到地图容器中
+    PlayControl.prototype.initialize = function(map){
+        // 创建一个DOM元素
+        var input = document.createElement("input");
+        input.id="playCtrl";
+        input.type="image";
+        input.src="image/play.png";
+        var i=0;
+        input.onclick=function(){//播放按钮
+            if(!x){return}
+            if(i==0){
+
+                startPlay();
+                input.src="image/pause.png";
+                i=1;
+            }else{
+                pausePlay();
+                input.src="image/play.png";
+                i=0;
+            }
+        };
+        // 添加DOM元素到地图中
+        map.getContainer().appendChild(input);
+        // 将DOM元素返回
+        return input;
+    };
+    var myPlayCtrl = new PlayControl();// 创建控件
+    map.addControl(myPlayCtrl);// 添加到地图当中
+
+    //获取车辆停留时间段
+    function getParkTime(startTime,endTime){
+        var startDate=new Date(startTime);
+        var endDate=new Date(endTime);
+        return (endDate.getTime()-startDate.getTime())/(60*1000);
+    }
+
+    function pageDraw(j,data) {//在当前页画点
+        if(j>=po.length){
+            return;
+        }
+        poStart = carMk.getPosition();
+        var carPl = new BMap.Polyline([poStart, po[j]], {strokeColor: 'blue', strokeWeight: 4, strokeOpacity: 0.8});
+        map.addOverlay(carPl);//polyline添加
+        carMk.setPosition(po[j]);//marker改变位置、角度
+        carMk.setRotation(data.data[j].direct);
+        map.panTo(po[j],{noAnimation:true});
+        var rcv_time = data.data[j].rcv_time;
+        var datetime=dateFormal(rcv_time);//转换为本地时间格式
+        var speed=data.data[j].speed;
+        speed=Math.round(speed);
+        var gps_flag=data.data[j].gps_flag;
+        var mileage=data.data[j].mileage;
+        var uni_alerts=data.data[j].uni_alerts;
+        var alert=getAlert(uni_alerts);
+        var uni_status=data.data[j].uni_status;
+        var status=getStatus(uni_status);  //var currentTime=getTodayFormatTime();
+        var statehtml=getStateHtml(gps_flag,speed,alert,status);
+
+        var window_opts = {width:0,
+            height: 0
+            //,enableCloseOnClick:true
+        };
+        //添加信息窗口的内容
+        if(uni_status.length===0){//车辆状态为静止，
+            if(parkStartTime=="") {//停车开始时间=="",则给变量parkStartTime赋值gps_time；
+                parkStartTime = data.data[j].gps_time;
+            }else{//车辆状态为静止且车辆状态停车开始时间！=""，
+                parkEndTime=data.data[j].gps_time;
+                parkTime=getParkTime(parkStartTime,parkEndTime);
+                if(parkTime>=5){//如果停止时间大于5min，添加停留时间marker;
+                    var parkMark=new BMap.Mark(po[j],{icon:new BMap.Icon("image/park.png")});//停留park标记
+                    map.addOverlay(parkMark);
+                    var geoc = new BMap.Geocoder();//逆地址解析
+                    var address;
+                    geoc.getLocation(po[j], function(rs) {
+                        address=rs.address;
+                    });
+                    var parkContent="<div class='infoWindow'><p><b>" + obj_name +"</b></p><p>"+"停留时间:"+parkTime+"</p><p>"+address+"</p></div>";
+                    var parkInfo=new BMap.InfoWindow(parkContent,window_opts);
+                    parkMark.addEventListener("click",function(){
+                        this.openInfoWindow(parkInfo);
+                    });
+                    parkStartTime="";
+                }
+            }//添加park标注物后parkStartTime=""
+        }else{
+            parkStartTime="";
+        }
+        if(j==0&&page_no==1){
+            var content = "<div class='infoWindow' id='infoWidow'><p><b>" + obj_name +"</b></p>" + "<p>" + datetime + "</p>" + "<p>" + statehtml + "</p>" + "<p>里程：" + mileage + "km</p></div>";
+            infoWindow = new BMap.InfoWindow(content, window_opts); //为车辆覆盖物添加信息窗口
+            infoWindow.disableAutoPan();
+            carMk.openInfoWindow(infoWindow);//将index参数作为属性值再调用；
+            carMk.addEventListener("click", function(){
+                carMk.openInfoWindow(infoWindow);
+            });
+        }else{
+            if(!Qwidow)
+                Qwidow=$("#infoWidow");
+
+            var content = "<p><b>" + obj_name +"</b></p>" + "<p>" + datetime + "</p>" + "<p>" + statehtml + "</p>" + "<p>里程：" + mileage + "km</p>";
+            Qwidow.html(content);
+            if(!infoWindow.isOpen()){
+                Qwidow=null;
+                infoWindow.setContent("<div class='infoWindow' id='infoWidow'>"+content+"</div>");
+            }
+        }
+        
+        //setNewCenter(po[i],map);
+        if (j < data.data.length-1) {
+            timer=setTimeout(function () {
+                j++;
+                pageDraw(j,data);
+            }, interval);
+        }else{
+            page_no++;
+            url = urlHead + "vehicle/" + obj_id + "/gps_data2?auth_code=" + auth_code + "&start_time=" + start_time + "&end_time=" + end_time + "&page_no=" + page_no + "&page_count=" + page_count;
+            draw();
+        }
+    }
+    function draw() {//每一页的画点
+        var h;
+        $.ajax({   //分页请求
+            url: url,
+            type: "get",
+            dataType: "json",
+            success: function (data) {
+                po = new Array(data.data.length);
+                rotat = new Array(data.data.length);
+                for (var k = 0; k < data.data.length; k++) {
+                    po[k] = new BMap.Point(data.data[k].b_lon, data.data[k].b_lat);
+                    rotat[k]=data.data.direct;
+                }//将当前page所有点的经纬度取出
+                //var j=0;//单页点计数器，第几个点
+                pageDraw(0,data); //当前页面画点迭代循环启动
+            }
+        });//END ajax分页绘制
+        /* if (i < pageNum-1) {
+         setTimeout(function () {
+         i++;
+         page_no++;
+         url = urlHead + "vehicle/" + obj_id + "/gps_data2?auth_code=" + auth_code + "&start_time=" + start_time + "&end_time=" + end_time + "&page_no=" + page_no + "&page_count=" + page_count;
+         draw(i);
+         }, 1000);
+         }*/
+    }//    END   function draw()
+    function startPlay() {
+        //this.interval = interval;//播放的时间间隔
+        //console.log(interval);        var i = 0;//页面计数器，第几页
+        draw(0);
+
+    }// END function startPlay(interval)
+
+            function pausePlay(){
+                clearTimeout(timer);
+                carMk.closeInfoWindow();
+                var overlays=map.getOverlays();
+                for(var i=0;i<overlays.length;i++){
+                    map.removeOverlay(overlays[i]);
+                }
+                carMk = new BMap.Marker(point, {icon: new BMap.Icon("image/car_off.png", new BMap.Size(28, 28))});
+                map.addOverlay(carMk);//重新添加起点
+                $("#playCtrl").attr("src","image/play.png");
+            }
+    });
+
+</script>
+</body>
+</html>
