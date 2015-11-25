@@ -4,16 +4,31 @@
 	<title></title>
 	<meta charset="utf-8"> 
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-	<script type="text/javascript" src="js/jquery-2.1.1.min.js"></script>
+    <link href="css/mui.min.css" rel="stylesheet" />
+    <script type="text/javascript" src="js/jquery-2.1.1.min.js"></script>
 	<style type="text/css">
-		*{margin: 0;padding: 0;}
+		*{margin: 0;padding: 0;font-size: 14px;}
 		body{background:#DEDEDE;}
 		#top{width: 100%;height: 50px;background:#00BFFF;color: #fff;text-align: center;font-family: '微软雅黑';line-height:50px;position: relative;}
 		#top img{display: block;float: left;margin:auto;position: absolute;top: 0;bottom: 0;left: .5em}
 		h3{width: 100%;float: left;}
-		#content{width: 100%;height: 160px;}
-		#content ul li{width: 100%-20px;height: 30px;font-size: 14px;margin-top:14px;background: #fff;padding:10px 0 0 20px;}
-		a{text-decoration: none;color: #000;outline: none;}
+		#content{width: 100%;height: 160px;margin-top: 65px;}
+		.mui-table-view-cell{padding: 14px 20px;}
+		.mui-action-back{color: #007aff;}
+		.mui-title{font-weight:bold;}
+        .msgI{
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: red;
+            text-align: center;
+            top: 14px;
+            border-radius: 10px;
+            color: #fff;
+            right: 30px;
+            line-height: 20px;
+        }
+        #main_ul{margin-bottom: 20px}
 	</style>
 	<script type="text/javascript">
 	/**
@@ -21,23 +36,57 @@
 	 * @return {[type]}   [description]
 	 */
 	$(function() {
-		$("#Log_off").click(function() {
+		$("#Log_off").on("touchend",function() {
 			localStorage.removeItem('userPwd');//加密的密码
 			localStorage.removeItem('auth_code');//执行码
 			localStorage.removeItem('userPwdA');//明文密码
-			top.location="index.html";
+			parent.location="index.html";
 		});
+        $("#main_ul>li").on("touchend",goHref);
+        $("#back").on("touchend",function(){parent.changeCount()})
+        var unReadMsg=localStorage.getItem('unReadMsg');
+        if(unReadMsg)
+            $("#Mymsg").append("<div class='msgI'>"+unReadMsg+"</div>");
 	});
+    function goHref(){
+        if(this.id="Mymsg"&&parent.plugins)
+            parent.plugins.jPushPlugin.setApplicationIconBadgeNumber(0);
+        self.location=$(this).find("a").attr("href");
+    }
+    function addMessage(msg){
+        var msgI=$("#Mymsg>.msgI");
+        if(msgI.length){
+            var i=msgI.text();
+            i++;
+            msgI.text(i);
+            localStorage.setItem('unReadMsg',i);
+        }else{
+            localStorage.setItem('unReadMsg',1);
+            $("#Mymsg").append("<div class='msgI'>1</div>");
+        }
+    }
 	</script>
 </head>
 <body>
-<div id="top"><a href="javascript:parent.changeMore();"><img src="img/nav_icon_back.png" height="30"></a><h3>更 多</h3></div>
+<header class="mui-bar mui-bar-nav">
+	<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left" id="back"></a>
+	<h1 class="mui-title">更 多</h1>
+</header>
+
 <div id="content">
-	<ul>
-		<a id="Log_off" href="javascript:;"><li>注销登录</li></a>
-		<a href="modifyPwd.html"><li>修改密码</li></a>
-		<a href="message.html"><li>客户服务</li></a>
+	<ul class="mui-table-view" id="main_ul">
+		<li class="mui-table-view-cell" id="modify">
+			<a class="mui-navigate-right" href="modifyPwd.html">修改密码</a>
+		</li>
+		<li class="mui-table-view-cell" id="Mymsg">
+			<a class="mui-navigate-right" href="message.html">我的消息</a>
+		</li>
 	</ul>
+    <ul class="mui-table-view">
+        <li class="mui-table-view-cell" id="Log_off">
+			<a class="mui-navigate-right" href="javascript:;">注销登录</a>
+		</li>
+    </ul>
 </div>
 </body>
 </html>

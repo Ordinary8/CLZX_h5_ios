@@ -20,8 +20,8 @@ function track(id) {
     if(trackCar){
         trackP=null;
         map.removeOverlay(map.carPl);
-        map.removeOverlay(map.addressInfoCtrl);
-        var win=infoWindow[trackCar.car_index];
+        $("#addressInfoCtrl").css("display","none");
+        var win=map.getInfoWindow();
         var con=win.getContent().replace("取消","");
         win.setContent(con);
         if(car_index==trackCar.car_index){
@@ -34,7 +34,7 @@ function track(id) {
     trackP=[];
     trackP.push(new BMap.Point(trackCar.active_gps_data.b_lon, trackCar.active_gps_data.b_lat));//线的1起点
     $("#t"+trackCar.car_index).text("取消跟踪");    
-    addressInfo();
+    $("#addressInfoCtrl").css("display","block");
 }
 
 function drawLine(){
@@ -44,7 +44,7 @@ function drawLine(){
     //当前的点
     temTrackP=new BMap.Point(trackCar.active_gps_data.b_lon, trackCar.active_gps_data.b_lat);
 
-    changeAddress(temTrackP);
+    //changeAddress(temTrackP);
 
     trackP.push(temTrackP);
     map.carPl = new BMap.Polyline(trackP, {strokeColor: 'blue', strokeWeight: 4, strokeOpacity: 0.8});

@@ -1,7 +1,22 @@
-/*onerror=function(msg,url,l){
-    url=url.split(/[\\\/]/).pop();
-    alert(msg+";\n"+url+";\n"+l);
-}*/
+/**
+ * 标识是否是作为本地应用运行
+ * @type {Boolean}
+ */
+var _app_=true;
+
+function launchFullScreen(){
+  if(window.isFull||_app_)
+    return;
+  element=document.documentElement
+  if(element.requestFullScreen) {  
+    element.requestFullScreen();  
+  } else if(element.mozRequestFullScreen) {  
+    element.mozRequestFullScreen();  
+  } else if(element.webkitRequestFullScreen) {  
+    element.webkitRequestFullScreen();  
+  }
+  window.isFull=true;
+}  
 
 function ajaxLogin(){
     var userName=localStorage.getItem('userName');
@@ -18,30 +33,29 @@ function ajaxLogin(){
         });
 }
 
-	function loginSuccess(json)
-	{
-    $(".loading_back").show();
-		if(json.status_code==0)	
-		{
-          localStorage.setItem('number_type',json.number_type);         
- 	        localStorage.setItem('cust_id',json.cust_id);
-          localStorage.setItem('auth_code',json.auth_code);
-          localStorage.setItem('tree_path',json.tree_path);
-          localStorage.setItem('parent_cust_id',json.parent_cust_id);          
-			self.location="userlist.html";
-			//alert(json.status_code);
+var loginSuccess=function(json){
+    if(json.status_code==0)	
+    {
+      localStorage.setItem('number_type',json.number_type);         
+      localStorage.setItem('cust_id',json.cust_id);
+      localStorage.setItem('auth_code',json.auth_code);
+      localStorage.setItem('tree_path',json.tree_path);
+      localStorage.setItem('parent_cust_id',json.parent_cust_id);          
+      self.location="userlist.html";
+        //alert(json.status_code);
 
-		}
-		else
-		{
-			statusCode(json.status_code);
-		}
-	}
-	function loginError(jXMLHttpRequest, textStatus, errorThrown)
-	{
-    $(".loading_back").show();
-		alert("出错了，错误类型"+textStatus+"错误对象："+errorThrown);
-	}
+    }
+    else
+    {
+        statusCode(json.status_code);
+    }
+}
+
+function loginError(jXMLHttpRequest, textStatus, errorThrown)
+{
+    alert("出错了，错误类型"+textStatus+"错误对象："+errorThrown);
+    $("#lbtn").removeClass("logining");
+}
 	
 function statusCode(code){
     $("#lbtn").removeClass("logining");

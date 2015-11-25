@@ -2,8 +2,14 @@
 <HTML>
 <head>
 	<meta charset="utf-8"> 
-	<title>用户列表</title>
+	<meta name="apple-touch-fullscreen" content="yes">
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<title>车联在线</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link type="image/x-icon" href="/favicon.ico" rel="icon"/>
+	<link href="favicon.ico" rel="shortcut icon"/>
+	<link rel="apple-touch-icon-precomposed" href="Vehicle.net-AppIcon114x114.png" />
+    <script type="application/javascript" src="cordova.js"></script>
 	<script type="text/javascript" src="js/jquery-2.1.1.min.js"></script>
 	<script type="text/javascript" src="js/public.js"></script>
 	<link rel="stylesheet" type="text/css" href="css/userlist.css">
@@ -67,18 +73,24 @@
 #pullUp,#pullDown{display: none}
 
 #but{right: 1.5%;top: 70%;background-color: #5CC23B;width: 3.5em;height: 3.5em;border-radius: 50%;box-shadow: 0 0 15px rgba(0,0,0,.6);position: fixed;z-index: 1031;background-image: url("img/ico_poi_repair.png");background-size:100% 100%;background-repeat:no-repeat;overflow: hidden;-webkit-transition: -webkit-transform .5s;-webkit-transform:rotate3d(0,0,1,0);}
-.show_map #map{-webkit-transform:translate3d(0,0,0);}
+.show_map #map{-webkit-transform:translate3d(0,0,0);z-index: 1030}
 .show_map #but{-webkit-transform:rotate3d(0,0,1,540deg);}
 .show_map #but>div{opacity: 1}
 #but>div{background-color: #fff;background-image: url("img/ico_shop_0.png");position: absolute;width: 100%;height: 100%;background-size:100% 100%;background-repeat:no-repeat;-webkit-transition: opacity .5s;-webkit-transform:rotate3d(0,0,1,180deg);opacity: 0;border-radius: 50%;}
 .ui-input-text,.ui-body-inherit,.ui-shadow-inset{background: url(img/search.png) no-repeat 2px;}
 .ui-mobile .ui-page-active{overflow: hidden;height: 100%;background-color: #fff;}
-#more{-webkit-transform:translate3d(100%,0,0);padding-top: 20px;z-index: 1028;}
+#more{-webkit-transform:translate3d(100%,0,0);padding-top: 20px;}
+#more,#map{z-index: 2;}
 .show_more #more{-webkit-transform:translate3d(0,0,0);}
-#map{z-index: 1030;}
+.child_view{padding-bottom: 50px;}
+
+.no_bar .status_bar{display: none}
+.no_bar #top{top: 0}
+.no_bar .wrapper{top: 105px}
+.no_bar #more{padding-top: 0}
 </style>
 </head>
-<body>
+<body onclick="launchFullScreen()">
 <div class="status_bar"></div>
 <div id="top" data-position="fixed">
 	<div id="userList">
@@ -93,7 +105,7 @@
 		</div>
 	</div>
 </div>
-<div id="wrapper" class="wrapper" style="bottom:0">
+<div id="wrapper" class="wrapper" style="bottom:50px">
    <div id="scroller" class="ui-content" role="main" style="padding:0px;">
         <div id="pullDown"  class="listDiv">
             <span class="pullDownIcon"></span><span class="pullDownLabel">下拉刷新</span>
@@ -109,16 +121,14 @@
 	</div>
 
 </div>
-<iframe id="bottom" runat="server" src="bottom.html" width="100%" frameborder="0" scrolling="no" style="bottom:0;position:fixed;height: 50px;z-index:1029"></iframe>
+<iframe id="bottom" runat="server" src="bottom.html" width="100%" frameborder="0" scrolling="no" style="bottom:0;position:fixed;height: 50px;z-index:1032"></iframe>
 
 <div class="child_view" id="more">
-    <iframe  src="more.html"></iframe>
+    <iframe></iframe>
 </div>
+
 <div class="child_view" id="map">
-    <iframe  src="map.html"></iframe>
-</div>
-<div id="but">
-	<div></div>
+    <iframe></iframe>
 </div>
 </body>
 </HTML>

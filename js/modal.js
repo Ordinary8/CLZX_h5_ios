@@ -22,26 +22,8 @@ function modal(id) {
     obj_name=carData[car_index].obj_name;
     sessionStorage.obj_name=obj_name;
     sessionStorage.obj_id=obj_id;
-    /*if(isExitsVariable(car_index)){
-        car_index=null;
-    }else{
-        var car_index = parseInt(id.substr(1));
-    }
-    if(isExitsVariable(obj_id)){
-        obj_id=null;
-    }else{var obj_id="";}
-    if(isExitsVariable(obj_name)){
-        obj_name=null;
-        sessionStorage.obj_name="";
-    }else{var obj_name="";}
-    var url = urlHead+"customer/177/vehicle?auth_code=f6cdab399b363a36aac40724857c31ea&tree_path=,1,177,&mode=all&page_no=1&page_count=20";
 
-    $.get(url, function (data) {
-        obj_id = data.data[car_index].obj_id;
-        obj_name=data.data[car_index].obj_name;
-        sessionStorage.obj_name=obj_name;
-        sessionStorage.obj_id=obj_id;
-    },"json");*/
+    localStorage.setItem("carData",JSON.stringify(carData));//保存carData,从playback返回map页面时使用
 }
 function closeModal() {
     var e1 = document.getElementById('modal-overlay');

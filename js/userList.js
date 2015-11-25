@@ -3,6 +3,7 @@ var url ="http://web.wisegps.cn:3000/";
 var cust_id=localStorage.getItem('cust_id');
 var auth_code=localStorage.getItem('auth_code');
 var tree_path=localStorage.getItem('tree_path');
+if(!auth_code){self.location="index.html";}
 var userTreePath;
 
 var page_no=1;
@@ -11,14 +12,30 @@ var page_count=100;
 var userVal,refresh="down";
 var tem;//地图的window对象
 var key;//search里的value
+var pageFlag=0;//标识当前显示哪个页面；0：userlist；1：map；2：more；
+window.foreground=true;//标识是否刚从后台切换回来
 
+if(!_app_&&!window.navigator.standalone){
+	window.addEventListener('DOMContentLoaded', function() {
+	    var page = $("body>div")[0],
+	        nav = window.navigator,
+	        ua = nav.userAgent,
+	        isFullScreen = nav.standalone;
+	    if (ua.indexOf('Android') !== -1) {
+	        // 56对应的是Android Browser导航栏的高度
+	        page.style.height = window.innerHeight + 56 + 'px';
+	    } else if (/iPhone|iPod|iPad/.test(ua)) {
+	        // 60对应的是Safari导航栏的高度
+	        page.style.height = window.innerHeight + (isFullScreen ? 0 : 60) + 'px'
+	    }
+	    setTimeout(scrollTo, 0, 0, 1);
+	}, false);
+}
 $(document).ready(function (){
     $("#but").on("touchend",changeMap);
-	tem=document.querySelector("#map>iframe").contentWindow;
+	carAjax();//绑定select的绑定事件
 
-	carAjax();
-
-	$.getJSON(
+	$.getJSON(//获取用户下子用户
 		url+"customer/"+cust_id+"/customer?auth_code="+auth_code+"&tree_path="+tree_path+"&page_no=1&page_count=100",
 		function(data)
 		{
@@ -53,19 +70,25 @@ $(document).ready(function (){
 		setTimeout('$("#search_content").css("display","none");',500);
 	});
 	function getSearchVal(){
-	$.getJSON(
-		//"http://web.wisegps.cn:3000/customer/177/vehicle/search?auth_code=f6cdab399b363a36aac40724857c31ea&tree_path=%2C1%2C177%2C&mode=all&limit=5&key=%E8%B4%B5A0",
-		url+"customer/"+cust_id+"/vehicle/search?auth_code="+auth_code+"&tree_path="+tree_path+"&mode=all&page_no=1&page_count=5&key="+key,
-
-	function(data){
-			$("#search_content>ul>li").remove();
+        $.getJSON(
+        //"http://web.wisegps.cn:3000/customer/177/vehicle/search?auth_code=f6cdab399b363a36aac40724857c31ea&tree_path=%2C1%2C177%2C&mode=all&limit=5&key=%E8%B4%B5A0",
+            url+"customer/"+cust_id+"/vehicle/search?auth_code="+auth_code+"&tree_path="+tree_path+"&mode=all&page_no=1&page_count=5&key="+key,
+        function(data){
+            $("#search_content>ul>li").remove();
             $("#search_content")[0].data=data.data;
-			$.each(data.data,function (i,a)
-			{	
-				$("#search_content>ul").append("<li onclick='GPSCar("+a.obj_id+","+(i+1)+")'>"+a.obj_name+"</li>");			
-		});
-	})
-	}
+            $.each(data.data,function (i,a)
+            {
+                $("#search_content>ul").append("<li onclick='GPSCar("+a.obj_id+","+(i+1)+")'>"+a.obj_name+"</li>");
+            });
+        })
+    }
+
+    if(!_app_&&!window.navigator.standalone){
+    	alert("添加到主屏幕，可全屏使用");
+    }
+    
+    //加载map页面和more页面
+    loadMapAndMore();
 });	
 function getData(){
 	$.getJSON(
@@ -83,8 +106,6 @@ function carAjax(){
 		$("#select>option").each(function(index){
 			if($(this).text()==userVal){
 			userTreePath = $("#userid ul li").eq(index).text();
-            if(tem.fun2)
-            	tem.fun2(userTreePath);
 			$(".carlist").remove();
 			getData();
 			}
@@ -93,7 +114,7 @@ function carAjax(){
 	});
 }
 function getJsonData(data){
-	if(tem.drawCar){
+	if(tem&&tem.drawCar){
 		if(tem.map)
 			tem.map.clearOverlays();
 		tem.drawCar(data.data,refresh);
@@ -208,26 +229,52 @@ function makeContent(a,inside){
 
 //调用定位车辆函数
 function GPSCar(id,i){
+    if(!tem.map){
+        alert("请等待地图加载！");
+        return;
+    }
     var json;
     if(i)json=$("#search_content")[0].data[i-1];
 	changeMap();
     setTimeout(function(){tem.fun1(id,json)},500);
 }
+//changeMap()，changeMore()，changeCount() 在bottom.html里调用
 function changeMap(){
-    $("body").toggleClass("show_map");
-    changeMap.changed=false;
-    event.preventDefault();
+    pageFlag=1;
+	$("body").removeClass("show_more").addClass("show_map");
+    if(tem.dataRefresh)//如果数据更新过，则刷新位置
+        tem.drawCar(tem.carData,false);
 }
 
 function changeMore(){
-    $("body").toggleClass("show_more");
+    pageFlag=2;
+	$("body").removeClass("show_map").addClass("show_more"); 
 }
 
+function changeCount(){
+    pageFlag=0;
+	$("body").removeClass("show_map").removeClass("show_more");
+}
+//在更多页面调用
 function hideStatusBar(){
-	$("#bottom").css("z-index","1000");
+	$(".child_view").css("padding-bottom","0");
+	$("#bottom").css("z-index","1");
 }
 function showStatusBar(){
-	$("#bottom").css("z-index","1029");
+	$(".child_view").css("padding-bottom","50px");
+	$("#bottom").css("z-index","1031");
+}
+
+/**
+ *等主页面加载完之后才开始加载地图 和更多页面
+ */
+function loadMapAndMore(){
+    var map=document.querySelector("#map>iframe");
+    map.addEventListener("load",function(){
+        tem=document.querySelector("#map>iframe").contentWindow;
+    });
+    map.src="map.html";
+    document.querySelector("#more>iframe").src="more.html";
 }
 
 function getUpData()//下面 pullUpAction 调用这个方法进行加载
@@ -363,4 +410,85 @@ function NewDate(str) {
     date.setUTCFullYear(years, months, days);
     date.setUTCHours(hours, mins, secs, smsecs);
     return date;
+}
+
+//推送
+document.addEventListener('deviceready',function(){
+    window._alert=alert;
+    alert=function(msg){
+        navigator.notification.alert(
+            msg,  // 显示信息
+            null,         // 警告被忽视的回调函数
+            '车联在线',            // 标题
+            '确定'                  // 按钮名称
+        );
+    }
+    
+    window.plugins.jPushPlugin.setTags([cust_id]);
+}, false);
+
+//document.addEventListener("jpush.receiveMessage", getOneMessage, false);
+//获取到消息
+function getOneMessage(data){
+    navigator.vibrate(150);
+    var bToObj;
+    if(typeof data=="string"){
+        data=data.replace(/"{"/g,'{"').replace(/"}"/g,'"}');
+        try{
+            bToObj=JSON.parse(data);
+        }catch(e){
+            alert("收到一条消息，但解析出错了");
+        }
+    }else 
+        bToObj=data;
+    
+    var more=document.querySelector("#more>iframe").contentWindow;
+    var bottom=document.querySelector("#bottom").contentWindow;
+    more.addMessage(bToObj);
+    if(pageFlag==0)
+        bottom.addMessage();
+}
+
+/**
+ *点击通知进入应用则直接跳到“我的消息”页面
+ */
+function onOpenNotification(event){
+    var content;
+    if(device.platform == "Android"){
+        content=window.plugins.jPushPlugin.openNotification;
+    }else{
+        content=event;
+    }
+    var more=document.querySelector("#more>iframe").contentWindow;
+    var msg=more.$("#Mymsg");
+
+    window.foreground=true;
+    if(msg.length){
+        more.location="message.html";
+        changeMore();
+    }else{
+        more.autoMessage();//获取最新记录
+    }
+    window.plugins.jPushPlugin.setApplicationIconBadgeNumber(0);
+}
+
+/**
+ *注册点击通知事件（如果用户是点击通知进入应用的则触发onOpenNotification）
+ */
+document.addEventListener("jpush.receiveNotification", getOneMessage, false);
+document.addEventListener("jpush.openNotification", onOpenNotification, false);
+document.addEventListener("pause", function(){
+    window.foreground=false;
+}, false);
+
+document.addEventListener("resume", function(){
+    setTimeout("window.foreground=true;",1000);
+}, false);
+
+onerror=function(msg,url,l){
+    var flie=self.location.href.split(/[\\\/.]/);
+    var flieName=flie[flie.length-2];
+    url=url.split(/[\\\/.]/).pop();
+    url=url+"from("+flieName+")";
+    alert(msg+";\n"+url+";\n"+l);
 }

@@ -27,16 +27,54 @@
 	}
 	.ui-btn{margin: 0;border:0;}
 	.ui-btn.ui-corner-all{border-radius: 0;}
+	.ui-btn-icon-notext:after, .ui-btn-icon-left:after, .ui-btn-icon-right:after{
+		top: 50%;
+    	margin: -11px 13px;
+	}
+    .msgI{
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background-color: red;
+        text-align: center;
+        top: 10px;
+        border-radius: 10px;
+        color: #fff;
+        right: 10px;
+        font-weight: 200;
+        line-height: 20px;
+    }
 	</style>
 </head>
 <body>
 <div id="bottom">
 	<ul>
-		<li><a href="" onclick="parent.changeMore()" data-role="button" data-icon="home">首页</a></li>
-		<li><a href="" onclick="parent.changeMap()" data-role="button" data-icon="gear">地图</a></li>
-		<li><a href="" onclick="parent.changeMore()" data-role="button" data-icon="grid">更多</a></li>
+		<li><a data-role="button" data-icon="home" id="home">首页</a></li>
+		<li><a data-role="button" data-icon="gear" id="map">地图</a></li>
+		<li><a data-role="button" data-icon="grid" id="more">更多</a></li>
 	</ul>
 </div>
-
+<script type="text/javascript">
+	$("#home").on("touchend",parent.changeCount);
+	$("#map").on("touchend",parent.changeMap);
+	$("#more").on("touchend",function(){
+        $("#more>.msgI").remove();
+        parent.changeMore();
+    });
+    var unReadMsg=localStorage.getItem('unReadMsg');
+    if(unReadMsg)
+        $("#Mymsg").append("<div class='msgI'>"+unReadMsg+"</div>");
+    
+    function addMessage(msg){
+        var msgI=$("#more>.msgI");
+        if(msgI.length){
+            var i=msgI.text();
+            i++;
+            msgI.text(i);
+        }else{
+            $("#more").append("<div class='msgI'>1</div>");
+        }
+    }
+</script>
 </body>
 </html>

@@ -2,7 +2,7 @@
 .fl{float:left;}
 .fr{float:right;}
 body{position: relative;}
-#top{position: fixed;background: #fff;width: 100%;z-index: 100;top: 20px;}
+#top{position: fixed;background: #fff;width: 100%;top: 20px;z-index: 1;}
 #userList{height: auto;padding:0px 10px;}
 #userList select{width:100%;height: 30px;}
 .search{padding: 0px 10px;width: 100%;box-sizing: border-box;position: relative;}
@@ -22,8 +22,8 @@ body{position: relative;}
 .carlist{box-sizing: border-box;width:100%;height:50px;font-size:12px;padding:5px;padding-right:10px;margin-top:5px;border-bottom: 1px solid #ccc;}
 .car_left{width: 50%;height: 40px;}
 .carimg{width:30px;height:30px;}
-.car_id{width:100px;height:30px;margin-left: 20px;}
-.car_id p:first-of-type{padding-bottom:10px;}
+.car_id{width:110px;height:30px;margin-left: 10px;}
+.car_id p{padding-bottom:10px;}
 .car_right{width: 50%;height: 40px;text-align: right;}
 .car_state{height:20px;}
 .date{margin-right: 0;margin-left: auto;margin-bottom: 10px;}

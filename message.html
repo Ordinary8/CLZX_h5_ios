@@ -67,6 +67,7 @@
         background-color: #eaeaea;
     }
     #msg-list {
+        padding: 10px 0;
         height: 100%;
         overflow: auto;
         -webkit-overflow-scrolling: touch;
@@ -284,20 +285,11 @@
 </head>
 <body>
 <header class="mui-bar mui-bar-nav">
-    <a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left" href="javascript:back();"></a>
+    <a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left" id="back"></a>
     <h1 class="mui-title">我的消息</h1>
 </header>
 <div class="mui-content">
     <div id='msg-list'>
-        <div class="msg-item">
-            <img class="msg-user-img" src="./image/chat_default_service.png" alt="" />
-            <div class="msg-content">
-                <div class="msg-content-inner">
-                    Hi，我是 车联在线 小管家！
-                </div>
-                <div class="msg-content-arrow"></div>
-            </div>
-        </div>
     </div>
 </div>
 <footer class="mui-bar mui-bar-footer">
@@ -305,15 +297,24 @@
         <textarea id='msg-text' type="text" class='input-text'></textarea>
     </div>
     <div class="footer-right">
-        <i id='btn-submit' class="mui-icon iconfont icon-jianpan" style="font-size: 28px;"></i>
+        <i id='btn-submit' class="mui-icon mui-icon-paperplane" style="font-size: 28px;"></i>
     </div>
 </footer>
 <script src="js/globalVar.js"></script>
 <script>
+    if(parent==window){
+        var script = document.createElement("script");
+        script.type = "application/javascript";
+        script.src = "cordova.js";
+        document.body.appendChild(script);
+    }
+    
     $(document).ready(function(){
         autoMessage();
+        localStorage.removeItem('unReadMsg');//删除未读消息数字
         if(parent.hideStatusBar)
             parent.hideStatusBar();
+        $("#back").on("touchend",function(){back()});
     });
     var myDom={//获取Dom
         msgText:$("#msg-text"),
@@ -376,34 +377,130 @@
             }
         }
         $.get(url,function(data){
-            if(data.length){
+            if(msgData)
+                msgData=data.concat(msgData);
+            else
                 msgData=data;
-
-                for(var i=0;i<data.length;i++){
-                    var textValue=data[i].content.replace(new RegExp('\n', 'gm'), '<br/>');//获取消息内容处理
-                    if(data[i].sender_id==customer_id){
-                        if(msgLen==0){
-                            myDom.msgList.append('<div class="msg-item msg-item-self"><i class="msg-user mui-icon mui-icon-person"></i><div class="msg-content"><div class="msg-content-inner"> '
-                                    +textValue+'</div><div class="msg-content-arrow"></div></div>');
-                            scrollToBottom();
-                        }
-                    }else{
-                        myDom.msgList.append('<div class="msg-item"> <img class="msg-user-img" src="./image/chat_default_service.png" alt="" /><div class="msg-content"><div class="msg-content-inner"> '
-                                +textValue+'</div><div class="msg-content-arrow"></div></div>');
-                       scrollToBottom();
-                    }
+            var buffHtml="";
+            for(var i=data.length-1;i>=0;i--){
+                var textValue=data[i].content.replace(new RegExp('\n', 'gm'), '<br/>');//获取消息内容处理
+                if(data[i].sender_id==customer_id){
+                    buffHtml+='<div class="msg-item msg-item-self"><i class="msg-user mui-icon mui-icon-person"></i><div class="msg-content"><div class="msg-content-inner"> '+textValue+'</div><div class="msg-content-arrow"></div></div></div>';
+                }else{
+                    buffHtml+='<div class="msg-item"><img class="msg-user-img" src="./image/chat_default_service.png" alt="" /><div class="msg-content"><div class="msg-content-inner"> '+textValue+'</div><div class="msg-content-arrow"></div></div></div>';
                 }
-                msgLen=data.length;
             }
-            setTimeout(autoMessage,1000*10);
+            myDom.msgList.append(buffHtml);
+            scrollToBottom();
+            msgLen=msgData.length;
+            //setTimeout(autoMessage,1000*10);
         });
     };
 
 function back(){
-    if(top.showStatusBar)
-        top.showStatusBar();
-    history.back();
+    if(parent.showStatusBar)
+        parent.showStatusBar();
+    self.location="more.html";
 }
+
+function getHttp(){
+    var url=location.search;
+    if(!url)return {};
+    url=url.split("?")[1].split("&");
+    var arr=new Array();
+    var n=url.length;
+    for(var i=0;i<n;i++){
+        arr[url[i].split("=")[0]]=decodeURIComponent(url[i].split("=")[1]);
+    }
+    return arr;
+}
+
+//如果是点击通知栏进入的，则执行
+if(getHttp().from=="index.html"){
+    //覆写back()
+    back=function(){
+        self.location="userlist.html";
+    }
+    //添加状态栏空位
+    $("body").css("padding-top","20px");
+    $("header").css("top","20px");
+}
+    
+//推送
+    
+//收到消息后，添加一条消息
+function addMessage(data){
+    var msg=data.msg;
+    var chatId=data.chat_id;
+    myDom.msgList.append('<div class="msg-item"><img class="msg-user-img" src="./image/chat_default_service.png" alt="" /><div class="msg-content"><div class="msg-content-inner">'+msg+'</div><div class="msg-content-arrow"></div></div></div>');
+    scrollToBottom();
+    msgData.unshift({
+        content:msg,
+        chat_id:chatId
+    });
+}
+    
+//寻找一个json中的msg属性,并返回msg的值（可递归遍历json内的json)
+function getJsonMsg(json,item){
+	for (items in json){
+		if(items==item)
+			return json[items];
+		else if(typeof json[items]=="object"){
+			var m=getJsonMsg(json[items],item);
+			if(m)return m;
+		}
+	}
+}
+    
+function onReceiveMessage(data){
+    navigator.vibrate(150);
+    var bToObj;
+    if(typeof data=="string"){
+        data=data.replace(/"{"/g,'{"').replace(/"}"/g,'"}');
+        try{
+            bToObj=JSON.parse(data);
+        }catch(e){
+            alert("收到一条消息，但解析出错了");
+        }
+    }else 
+        bToObj=data;
+    addMessage(bToObj);
+}
+
+/**
+ *点击通知进入应用则直接跳到“我的消息”页面
+ */
+function onOpenNotification(event){
+    autoMessage();
+    window.plugins.jPushPlugin.setApplicationIconBadgeNumber(0);
+}
+    
+document.addEventListener('deviceready',function(){
+    window._alert=alert;
+    alert=function(msg){
+        navigator.notification.alert(
+            msg,  // 显示信息
+            null,         // 警告被忽视的回调函数
+            '车联在线',            // 标题
+            '确定'                  // 按钮名称
+        );
+    }
+    
+    /**
+     *注册点击通知事件（如果用户是点击通知进入应用的则触发onOpenNotification）
+     */
+    document.addEventListener("jpush.receiveNotification", onReceiveMessage, false);
+    document.addEventListener("jpush.openNotification", onOpenNotification, false);
+
+    document.addEventListener("pause", function(){
+        window.foreground=false;
+    }, false);
+    document.addEventListener("resume", function(){
+        setTimeout("window.foreground=true;",1000);
+    }, false);
+    
+    window.plugins.jPushPlugin.setApplicationIconBadgeNumber(0);
+}, false);
 </script>
 </body>
 </html>

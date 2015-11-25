@@ -1,7 +1,8 @@
-/*onerror=function(msg,url,l){
-    url=url.split(/[\\\/]/).pop();
-    alert(msg+";\n"+url+";\n"+l);
-}*/
+if(localStorage.getItem('debugFlag')==11)
+    onerror=function(msg,url,l){
+        url=url.split(/[\\\/]/).pop();
+        alert(msg+";\n"+url+";\n"+l);
+    }
 
 /**
  * Created by allyn on 2015/8/11.
@@ -77,46 +78,11 @@ function NewDate(str) {
     return date;
 }
 
-
-
-
-
-
-//添加地址显示控件
-function addressInfo(){
-    map.removeOverlay(map.addressInfoCtrl);
-    function AddressInfoControl(){
-        // 默认停靠位置和偏移量
-        this.defaultAnchor = BMAP_ANCHOR_BOTTOM_LEFT;
-        this.defaultOffset = new BMap.Size(0, 0);
-    }
-    AddressInfoControl.prototype = new BMap.Control();
-    AddressInfoControl.prototype.initialize = function(map){
-        // 创建一个DOM元素
-        var div=document.createElement("div");
-        div.style.opacity="0.8";
-        div.style.backgroundColor="#bbbbbb";
-        div.style.fontSize="10px";
-        div.style.width="100%";
-        div.style.padding="5px";
-        div.id="addressInfoCtrl";
-        div.innerText="";
-        map.getContainer().appendChild(div);
-        // 将DOM元素返回
-        return div;
-    };
-    // 创建控件
-    var addressInfoCtrl = new AddressInfoControl();
-    // 添加到地图当中
-    map.addControl(addressInfoCtrl);
-    map.addressInfoCtrl=addressInfoCtrl;
-}
-function changeAddress(point) {
+function changeAddress(point) { //改变地址方法
+    $("#addressInfoCtrl").css("display","block");
     var geoc = new BMap.Geocoder();
     var addressStr="";
-
     geoc.getLocation(point, function(rs) {
-        console.log(rs);
         var addComp = rs.addressComponents;
         addressStr= addComp.province  + addComp.city  + addComp.district  + addComp.street  + addComp.streetNumber;
         $("#addressInfoCtrl").text(addressStr);

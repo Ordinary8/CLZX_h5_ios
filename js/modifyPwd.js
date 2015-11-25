@@ -22,7 +22,6 @@
 	 */
 	function _getPwd() {
 
-		$("#show").html("");
 		_initialPwd_ = $("#initialPwd").val();
 	    _againPwd_ = $("#againPwd").val();
 	    _auth_code_=$("#newPwd").val();
@@ -32,12 +31,11 @@
 			if(_againPwd_==_auth_code_){
 				_auth_code_=$.md5(_auth_code_);//加密
 				_getPwdJson();
-				$("#show").html("");
 			}else{
-				$("#show").html("两次密码输入不一致!");
+				alert("两次密码输入不一致!");
 			}
 		}else{
-			$("#show").html("密码不能为空或原密码不能与新密码相同！");
+			alert("密码不能为空或原密码不能与新密码相同！");
 		}
 	}
 	/**
