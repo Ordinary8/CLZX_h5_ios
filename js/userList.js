@@ -143,12 +143,12 @@ var alertsArr=["紧急报警","超速报警","震动报警","位移报警","防�
 function makeContent(a,inside){
     //构造一个列表元素的内容
     var content="";
-    var status="",lastT="",img="";
+    var status="静止",lastT="静止",img="img/car_off.png",ymd="";
     if(a.active_gps_data!=null){
         var rcvTime = a.active_gps_data.rcv_time;
         var timer = new Date();							
         var rvTime=changeDate(rcvTime);
-        var ymd =rvTime.substr(5,3)+rvTime.substr(8,3)+rvTime.substr(11,3)+rvTime.substr(14,2);
+        ymd =rvTime.substr(5,3)+rvTime.substr(8,3)+rvTime.substr(11,3)+rvTime.substr(14,2);
         var arr = new Array();
 
         arr = rvTime.split(/[-\s:]/);

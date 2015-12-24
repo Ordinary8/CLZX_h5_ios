@@ -107,14 +107,20 @@ function drawCar(data,refresh){ //绘制车辆
         var point = new Array();
     }
 
-    carNum = carData.length;
-    for (var i = 0; i < carNum; i++) {
-        if(!carMk[i]){
-            point[i]=addNewMarker(carData[i]);
-        }else{
-            setCarMk(carMk[i],carData[i]);
-        }
+    
+    for (var i = 0; i < carData.length; i++) {
+    	if(carData[i].active_gps_data){
+    		if(!carMk[i]){
+	            point[i]=addNewMarker(carData[i]);
+	        }else{
+	            setCarMk(carMk[i],carData[i]);
+	        }
+    	}else{
+    		carData.splice(i,1);	
+    		i--;
+    	}
     }
+    carNum = carMk.length;
     //如果窗口被打开了，则刷新窗口内容
     if(infoWindow.index&&infoWindow.index<carData.length){
         windowContent=getCarWind(carData[infoWindow.index],infoWindow.index);
@@ -306,6 +312,10 @@ function fun1(carId,json){
     }
     if(index<0){
         centerPoint=addNewMarker(json);
+        if(!centerPoint){
+        	alert("当前车辆没有位置信息，所以没有显示在地图上");
+        	return;
+        }
         carMk[carMk.length-1].openWindow();
     }else{
         centerPoint=new BMap.Point(carData[index].active_gps_data.b_lon,carData[index].active_gps_data.b_lat);
